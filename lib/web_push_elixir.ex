@@ -127,16 +127,19 @@ defmodule WebPushElixir do
   * `{:error, {:http_error, status, body}}` - HTTP error from push service
   * `{:error, {:transport_error, reason}}` - transport error from Req
   """
-  def send_notification(subscription, message, opts \\ []) when is_list(opts) do
+  def send_notification(subscription, message, opts \\ [])
+
+  def send_notification(subscription, message, opts) when is_binary(subscription) do
+    send_notification(Jason.decode!(subscription), message, opts)
+  end
+
+  def send_notification(%{"endpoint" => endpoint, "keys" => %{"p256dh" => p256dh, "auth" => auth}}, message, opts) when is_list(opts) do
     vapid_public_key = url_decode(Application.get_env(:web_push_elixir, :vapid_public_key))
     vapid_private_key = url_decode(Application.get_env(:web_push_elixir, :vapid_private_key))
 
     ttl = Keyword.get(opts, :ttl, 60)
     urgency = Keyword.get(opts, :urgency, nil)
     topic = Keyword.get(opts, :topic, nil)
-
-    %{"endpoint" => endpoint, "keys" => %{"p256dh" => p256dh, "auth" => auth}} =
-      Jason.decode!(subscription)
 
     encrypted_payload = encrypt_payload(message, p256dh, auth)
 

@@ -27,6 +27,23 @@ defmodule WebPushElixirTest do
     assert response.status in 200..202
   end
 
+  test "it should be able to handle subscription as a map when sending notification" do
+    {:ok, response} =
+      WebPushElixir.send_notification(@test_subscription, "some message")
+
+    assert %{
+              "authorization" => ["WebPush " <> <<_jwt::binary>>],
+              "content-encoding" => ["aesgcm"],
+              "content-length" => ["30"],
+              "content-type" => ["application/octet-stream"],
+              "crypto-key" => ["dh=" <> <<_crypto_keys::binary>>],
+              "encryption" => ["salt=" <> <<_salt::binary>>],
+              "ttl" => ["60"]
+            } = response.request.headers
+
+    assert response.status in 200..202
+  end
+
   test "it should respect the custom ttl argument" do
     subscription = Jason.encode!(@test_subscription)
 
